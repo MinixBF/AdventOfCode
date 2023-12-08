@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,6 +12,7 @@ namespace AdventOfCode
     {
         private readonly List<string> _input;
         private readonly double _resultPart1;
+        private readonly int _resultPart2;
 
         public Day04()
         {
@@ -35,41 +37,38 @@ namespace AdventOfCode
 
 
             var Cards = new List<Card>();
-            var counter = 0;
+            var counter = 1;
+            
+            // PARSE INPUT
             foreach (var line in _input)
             {
-                var split = line.Split(':');
+                var split = line.Split(':', '|');
                 // Get Card Number : Card 1 with paterd Card %d
-                var allNumbers = split[1].Split('|');
-                var winNumbers = allNumbers[0].Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).Select(int.Parse).ToList();
-                var numbers = allNumbers[1].Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).Select(int.Parse).ToList();
-                Cards.Add(new Card(counter++, winNumbers, numbers));
+                var winNumbers = split[1].Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).Select(int.Parse).ToList();
+                var numbers = split[2].Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).Select(int.Parse).ToList();
+                Cards.Add(new Card(counter++, winNumbers, numbers, numbers.Intersect(winNumbers).Count()));
             }
-            Console.WriteLine(Cards.Count);
 
-            var result = 0;
-            foreach (var card in Cards)
+            // PART 1
+            _resultPart1 = Cards.Sum(c => Math.Pow(2, c.matches - 1));
+
+            // PART 2 
+            var range = Cards.Select(c => 1).ToList();
+            for (var i = 0; i < Cards.Count; i++)
             {
-                var matches = 0;
-                foreach (var winNumber in card.WinNumbers)
+                for (var j = 0; j < Cards[i].matches; j++)
                 {
-                    if (card.Numbers.Contains(winNumber))
-                    {
-                        matches++;
-                    }
-                }
-                if(matches > 0)
-                {
-                    _resultPart1 += Math.Pow(2, matches - 1);
-                    result += matches;
+                    range[i + j + 1] += range[i];
                 }
             }
+            _resultPart2 = range.Sum();
         }
 
         public override ValueTask<string> Solve_1() => new($"Solution to {ClassPrefix} {CalculateIndex()}, part 1 is {_resultPart1}");
 
-        public override ValueTask<string> Solve_2() => new();
+        public override ValueTask<string> Solve_2() => new($"Solution to {ClassPrefix} {CalculateIndex()}, part 1 is {_resultPart2}");
     }
+    public record Card(int id, List<int> WinNumbers, List<int> Numbers, int matches);
 
-    public record Card(int id, List<int> WinNumbers, List<int> Numbers);
+    
 }
